@@ -1,9 +1,9 @@
-# import os
-# from dotenv import load_dotenv
+import os
+from dotenv import load_dotenv
 import math
-from HIDDEN.config import *
+# from HIDDEN.config import *
 
-is_tg_interface_true = 0 # использовать интерфейс тг, Вкл/выкл: 1/0
+is_tg_interface_true = 1 # использовать интерфейс тг, Вкл/выкл: 1/0
 
 class PARAMS():
     def __init__(self) -> None:
@@ -129,16 +129,16 @@ class PARAMS():
 
     def init_keys(self): 
         # ////////////////////// инициализация ключей: ///////////////////////////////
-        self.api_key = BINANCE_API_PUBLIC_KEY
-        self.api_secret = BINANCE_API_PRIVATE_KEY 
-        self.tg_api_token = TG_TOKEN
-        self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
-        self.seq_control_token = ACESS_TOKEN
+        # self.api_key = BINANCE_API_PUBLIC_KEY
+        # self.api_secret = BINANCE_API_PRIVATE_KEY 
+        # self.tg_api_token = TG_TOKEN
+        # self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
+        # self.seq_control_token = ACESS_TOKEN
         #////////////////////////////// для деплоя на сервер:
-        # self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
-        # self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
-        # self.tg_api_token = os.getenv("TG_TOKEN", "")
-        # # print(self.tg_api_token)
-        # self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
-        # self.seq_control_token = os.getenv("ACESS_TOKEN", "")
+        self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
+        self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
+        self.tg_api_token = os.getenv("TG_TOKEN", "")
+        # print(self.tg_api_token)
+        self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
+        self.seq_control_token = os.getenv("ACESS_TOKEN", "")
    
