@@ -8,3 +8,8 @@ pandas-ta
 python-dotenv
 pyTelegramBotAPI
 requests
+# pip install pandas
+# pip install pandas-ta
+# pip install pyTelegramBotAPI
+# pip install python-dotenv
+# pip install requests
