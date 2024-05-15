@@ -1,11 +1,10 @@
-pandas==2.2.2
-pandas-ta==0.3.14b0
-pyTelegramBotAPI==4.18.0
-python-dateutil==2.9.0.post0
-requests==2.31.0
-# pyTelegramBotAPI==4.17.0
-# python-dotenv==1.0.1
-# Requests==2.31.0
 # pandas==2.2.2
 # pandas-ta==0.3.14b0
-
+# python-dotenv==1.0.1
+# pyTelegramBotAPI==4.18.0
+# requests==2.31.0
+pandas
+pandas-ta
+python-dotenv
+pyTelegramBotAPI
+requests
