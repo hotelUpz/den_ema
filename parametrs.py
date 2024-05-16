@@ -16,8 +16,8 @@ class PARAMS():
         # self.symbol = 'NEARUSDT'
         # self.symbol = '1000PEPEUSDT'
         self.symbol = 'DOGEUSDT'
-        self.start_depo = 9 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
-        self.depo = 9 # депозит в USDT
+        self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
+        self.depo = 10 # депозит в USDT
         self.lev_size = 1 # размер кредитного плеча
         self.was_change_leverage_true = False
         self.margin_type = 'ISOLATED' # CROSS (изолированная маржа или кросс маржа. Изолированная по дефолту) 

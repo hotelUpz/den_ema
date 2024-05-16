@@ -18,7 +18,7 @@ class CONNECTOR_BINANCEE(PARAMS):
             'http': proxy_url,
             'https': proxy_url
         }
-        print(self.proxiess)
+        # print(self.proxiess)
 
     @log_exceptions_decorator
     def get_signature(self, params):
