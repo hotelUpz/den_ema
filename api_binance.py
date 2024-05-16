@@ -12,6 +12,13 @@ class CONNECTOR_BINANCEE(PARAMS):
         self.headers = {
             'X-MBX-APIKEY': self.api_key
         } 
+        proxy_url = f'http://{self.proxy_username}:{self.proxy_password}@{self.proxy_host}:{self.proxy_port}'
+
+        self.proxiess = {
+            'http': proxy_url,
+            'https': proxy_url
+        }
+        print(self.proxiess)
 
     @log_exceptions_decorator
     def get_signature(self, params):
@@ -42,11 +49,11 @@ class BINANCE_API(CONNECTOR_BINANCEE):
 # ////////////////////////////////////////get api: //////////////////////////////////
     @log_exceptions_decorator
     def get_excangeInfo(self):     
-        return self.HTTP_request(self.exchangeInfo_url, method='GET', headers=self.headers)
+        return self.HTTP_request(self.exchangeInfo_url, method='GET', headers=self.headers, proxies=self.proxiess)
     
     @log_exceptions_decorator
     def get_all_tickers(self):       
-        return self.HTTP_request(self.all_tikers_url, method='GET', headers=self.headers)
+        return self.HTTP_request(self.all_tikers_url, method='GET', headers=self.headers, proxies=self.proxiess)
         
     @log_exceptions_decorator
     def get_all_orders(self, symbol):
@@ -55,7 +62,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
             # 'limit': limit
         }
         params = self.get_signature(params)
-        resp = self.HTTP_request(self.get_all_orders_url, method='GET', headers=self.headers, params=params)
+        resp = self.HTTP_request(self.get_all_orders_url, method='GET', headers=self.headers, params=params, proxies=self.proxiess)
         # print(resp)
         return resp
 
@@ -68,7 +75,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         # print(f"self.ema2_period: {self.ema2_period}")
         params["limit"] = int(self.max_period*2.5)
         params = self.get_signature(params)
-        klines = self.HTTP_request(self.klines_url, method='GET', headers=self.headers, params=params)
+        klines = self.HTTP_request(self.klines_url, method='GET', headers=self.headers, params=params, proxies=self.proxiess)
         if klines:
             data = pd.DataFrame(klines).iloc[:, :6]
             data.columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
@@ -84,7 +91,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
             "symbol": symbol
         }
         params = self.get_signature(params)
-        positions = requests.get(self.positions_url, headers=self.headers, params=params)
+        positions = requests.get(self.positions_url, headers=self.headers, params=params, proxies=self.proxiess)
         if positions.status_code == 200:    
             positions = positions.json()                        
             for position in positions:
@@ -102,7 +109,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params['recvWindow'] = 5000
         params['newClientOrderId'] = 'CHANGE_MARGIN_TYPE'       
         params = self.get_signature(params)
-        return self.HTTP_request(self.set_margin_type_url, method='POST', headers=self.headers, params=params)
+        return self.HTTP_request(self.set_margin_type_url, method='POST', headers=self.headers, params=params, proxies=self.proxiess)
         
     @log_exceptions_decorator
     def set_leverage(self, symbol, lev_size):                     
@@ -111,7 +118,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params['leverage'] = lev_size
         params = self.get_signature(params)
         # print(params)
-        return self.HTTP_request(self.set_leverage_url, method='POST', headers=self.headers, params=params)
+        return self.HTTP_request(self.set_leverage_url, method='POST', headers=self.headers, params=params, proxies=self.proxiess)
 
     @log_exceptions_decorator
     def make_order(self, symbol, qty, side, market_type, target_price): 
@@ -126,7 +133,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params["side"] = side
         params['newOrderRespType'] = 'RESULT' # default 'ASK'
         params = self.get_signature(params)
-        resp = self.HTTP_request(self.create_order_url, method='POST', headers=self.headers, params=params)
+        resp = self.HTTP_request(self.create_order_url, method='POST', headers=self.headers, params=params, proxies=self.proxiess)
         # print(resp)
         return resp
 
@@ -141,7 +148,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params["recvWindow"] = 5000
         params['newOrderRespType'] = 'RESULT' # default 'ASK'
         params = self.get_signature(params)
-        resp = self.HTTP_request(self.create_order_url, method='POST', headers=self.headers, params=params)
+        resp = self.HTTP_request(self.create_order_url, method='POST', headers=self.headers, params=params, proxies=self.proxiess)
         # print(resp)
         return resp
     
@@ -152,5 +159,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
             'symbol': symbol            
         }
         params = self.get_signature(params)
-        resp = self.HTTP_request(self.cancel_all_orders_url, method='DELETE', headers=self.headers, params=params)
+        resp = self.HTTP_request(self.cancel_all_orders_url, method='DELETE', headers=self.headers, params=params, proxies=self.proxiess)
         return resp
+    
+# print(BINANCE_API().get_klines('BTCUSDT'))

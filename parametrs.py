@@ -16,8 +16,8 @@ class PARAMS():
         # self.symbol = 'NEARUSDT'
         # self.symbol = '1000PEPEUSDT'
         self.symbol = 'DOGEUSDT'
-        self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
-        self.depo = 10 # депозит в USDT
+        self.start_depo = 9 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
+        self.depo = 9 # депозит в USDT
         self.lev_size = 1 # размер кредитного плеча
         self.was_change_leverage_true = False
         self.margin_type = 'ISOLATED' # CROSS (изолированная маржа или кросс маржа. Изолированная по дефолту) 
@@ -27,7 +27,7 @@ class PARAMS():
 
     def init_all_params(self):
         # ///////////// интрадакшн ///////////////////////////////////
-        self.my_name = 'Denis' # ваше имя
+        self.my_name = 'Николай' # ваше имя
         self.market_place = 'binance' # ...
         self.market_type = 'futures' # ...
         # /////////////////////////////////////////
@@ -128,12 +128,17 @@ class PARAMS():
         self.settings_redirect_flag = 0
 
     def init_keys(self): 
-        # ////////////////////// инициализация ключей: ///////////////////////////////
+        # # ////////////////////// инициализация ключей: ///////////////////////////////
         # self.api_key = BINANCE_API_PUBLIC_KEY
         # self.api_secret = BINANCE_API_PRIVATE_KEY 
+        # # print(self.api_secret)
         # self.tg_api_token = TG_TOKEN
         # self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
         # self.seq_control_token = ACESS_TOKEN
+        # self.proxy_host = proxy_host
+        # self.proxy_port = proxy_port
+        # self.proxy_username = proxy_username
+        # self.proxy_password = proxy_password
         #////////////////////////////// для деплоя на сервер:
         self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
         self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
@@ -141,4 +146,10 @@ class PARAMS():
         # print(self.tg_api_token)
         self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
         self.seq_control_token = os.getenv("ACESS_TOKEN", "")
+        self.proxy_host = os.getenv("proxy_host", "")
+        self.proxy_port = os.getenv("proxy_port", "")
+        self.proxy_username = os.getenv("proxy_username", "")
+        self.proxy_password = os.getenv("proxy_password", "")
+
+# PARAMS()
    
