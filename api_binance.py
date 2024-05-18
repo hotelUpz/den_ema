@@ -11,14 +11,12 @@ class CONNECTOR_BINANCEE(PARAMS):
         super().__init__()
         self.headers = {
             'X-MBX-APIKEY': self.api_key
-        } 
+        }
         proxy_url = f'http://{self.proxy_username}:{self.proxy_password}@{self.proxy_host}:{self.proxy_port}'
-
         self.proxiess = {
             'http': proxy_url,
             'https': proxy_url
         }
-        # print(self.proxiess)
 
     @log_exceptions_decorator
     def get_signature(self, params):
@@ -35,10 +33,12 @@ class CONNECTOR_BINANCEE(PARAMS):
 
         for i in range(2):
             try:
+                if not self.is_proxies_true:
+                    del kwards['proxies']
                 response = requests.request(url=url, **kwards)
                 return response.json()
             except Exception as ex:
-                print(ex)
+                print(f"Ошибка в файле api_binance.py, строка 44:\n {ex}")
                 time.sleep((i+1) * multipliter)
 
         return None
@@ -54,7 +54,15 @@ class BINANCE_API(CONNECTOR_BINANCEE):
     @log_exceptions_decorator
     def get_all_tickers(self):       
         return self.HTTP_request(self.all_tikers_url, method='GET', headers=self.headers, proxies=self.proxiess)
-        
+    
+    # //////
+    def get_total_balance(self, ticker):
+        params = {}
+        params['recvWindow'] = 5000
+        params = self.get_signature(params)
+        current_balance = self.HTTP_request(self.balance_url, method='GET', headers=self.headers, params=params, proxies=self.proxiess)
+        return float([x['balance'] for x in current_balance if x['asset'] == ticker][0])
+    # ////////////   
     @log_exceptions_decorator
     def get_all_orders(self, symbol):
         params = {
@@ -72,7 +80,6 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params = {}
         params["symbol"] = symbol
         params["interval"] = self.interval
-        # print(f"self.ema2_period: {self.ema2_period}")
         params["limit"] = int(self.max_period*2.5)
         params = self.get_signature(params)
         klines = self.HTTP_request(self.klines_url, method='GET', headers=self.headers, params=params, proxies=self.proxiess)
@@ -91,7 +98,12 @@ class BINANCE_API(CONNECTOR_BINANCEE):
             "symbol": symbol
         }
         params = self.get_signature(params)
-        positions = requests.get(self.positions_url, headers=self.headers, params=params, proxies=self.proxiess)
+        positions = requests.get(
+            self.positions_url, 
+            headers=self.headers, 
+            params=params, 
+            proxies=self.proxiess if self.is_proxies_true else None
+        )
         if positions.status_code == 200:    
             positions = positions.json()                        
             for position in positions:
@@ -161,5 +173,3 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         params = self.get_signature(params)
         resp = self.HTTP_request(self.cancel_all_orders_url, method='DELETE', headers=self.headers, params=params, proxies=self.proxiess)
         return resp
-    
-# print(BINANCE_API().get_klines('BTCUSDT'))

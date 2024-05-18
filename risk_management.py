@@ -20,7 +20,7 @@ class STOP_LOGIC(STRATEGY):
             atr_period = period 
             # atr_period = int(candles_df.shape[0]) - 1
             _, atr_value  = self.calculate_atr(candles_df, atr_period)
-            return (atr_value / enter_price) * 1.1   
+            stop_loss_ratio = (atr_value / enter_price) * 1.1   
 
         if direction == 1:
             if stop_loss_type == 'LAST_MIN':
@@ -30,13 +30,13 @@ class STOP_LOGIC(STRATEGY):
                 if last_local_minima >= enter_price:
                     return fixed_stop_loss_ratio_val
                 else:
-                    return ((enter_price - last_local_minima) / enter_price)* 1.1
+                    stop_loss_ratio = ((enter_price - last_local_minima) / enter_price)* 1.1
             elif stop_loss_type == 'ABSOLUTE_MIN':
                 absolute_min = candles_df['Low'].min()
                 if absolute_min >= enter_price:
                     return fixed_stop_loss_ratio_val
                 else:
-                    return ((enter_price - absolute_min) / enter_price)* 1.1
+                    stop_loss_ratio = ((enter_price - absolute_min) / enter_price)* 1.1
         elif direction == -1:
             if stop_loss_type == 'LAST_MIN':
                 highs = candles_df['High']
@@ -45,18 +45,18 @@ class STOP_LOGIC(STRATEGY):
                 if last_local_maxima <= enter_price:
                     return fixed_stop_loss_ratio_val
                 else:
-                    return (abs(enter_price - last_local_maxima) / enter_price)* 1.1
+                    stop_loss_ratio = (abs(enter_price - last_local_maxima) / enter_price)* 1.1
             elif stop_loss_type == 'ABSOLUTE_MIN':
                 absolute_max = candles_df['High'].max()
                 if absolute_max <= enter_price:
                     return fixed_stop_loss_ratio_val
                 else:
-                    return (abs(enter_price - absolute_max) / enter_price)* 1.1
+                    stop_loss_ratio = (abs(enter_price - absolute_max) / enter_price)* 1.1
 
         if stop_loss_ratio is not None and stop_loss_ratio < 0.005:
             print(f"stop_loss_ratio < 0.004: {stop_loss_ratio < 0.005}")
             return 0.005
-        return
+        return stop_loss_ratio
     
 class STATISTIC(COInN_FILTERR):
     def __init__(self):  
@@ -116,40 +116,40 @@ class STATISTIC(COInN_FILTERR):
     def statistic_calculations(self, daily_trade_history_list):
         result_statistic_dict = {}
         result_statistic_dict["symbol"] = self.symbol
+        win_to_loss_statistik = f"0:0"
+        max_profit_abs = 0
+        max_drawdown_abs = 0
+        total_profit_abs = 0
+        total_losses_abs = 0
         if not isinstance(daily_trade_history_list, list) or len(daily_trade_history_list) == 0:
-            return {}
+            return "Нет данных для анализа"
 
         try:
             win_count = sum(1 for win_los, _, _, _ in daily_trade_history_list if win_los == 1)
             loss_count = sum(1 for win_los, _, _, _ in daily_trade_history_list if win_los == -1)
-            total_trade_count = win_count + loss_count
-            if total_trade_count != 0:
-                win_per = (win_count * 100) / total_trade_count
-                loss_per = (loss_count * 100) / total_trade_count
-                win_to_loss_statistik = f"{win_count}:{loss_count}"
-
-                result_statistic_dict["Побед"] = win_count
-                result_statistic_dict["Поражений"] = loss_count
-                result_statistic_dict["Процент побед"] = win_per
-                result_statistic_dict["Процент поражений"] = loss_per
-                result_statistic_dict["Отношение побед к поражениям"] = win_to_loss_statistik
+            win_to_loss_statistik = f"{win_count}:{loss_count}"
         except Exception as ex:
             print(ex)
+        result_statistic_dict["Отношение Плюсовых сделок к Минусовым"] = win_to_loss_statistik
 
         try:
             max_profit_abs = max((abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == 1)
             max_drawdown_abs = min(-1 * (abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == -1)
             total_profit_abs = sum((abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == 1)
             total_losses_abs = sum(-1 * (abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == -1)
-
-            result_statistic_dict["Максимальная прибыль ($)"] = max_profit_abs
-            result_statistic_dict["Максимальный убыток ($)"] = max_drawdown_abs
-            result_statistic_dict["Общая прибыль ($)"] = total_profit_abs
-            result_statistic_dict["Общий убыток ($)"] = total_losses_abs
         except Exception as ex:
             print(ex)
-
-        # Вывод результатов в столбик
+        result_statistic_dict["Максимальная прибыль ($)"] = max_profit_abs
+        result_statistic_dict["Максимальная просадка ($)"] = max_drawdown_abs
+        result_statistic_dict["Общая прибыль ($)"] = total_profit_abs
+        result_statistic_dict["Общий убыток ($)"] = total_losses_abs
+        result_statistic_dict["Доход (без учета комиссии) ($)"] = total_profit_abs - abs(total_losses_abs)
+        if result_statistic_dict["Доход (без учета комиссии) ($)"] > 0:
+            result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в плюс"
+        elif result_statistic_dict["Доход (без учета комиссии) ($)"] < 0:
+            result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в минус"
+        else:
+            result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в ноль"
         result_string = ""
         for key, value in result_statistic_dict.items():
             result_string += f"{key}: {value}\n"

@@ -2,7 +2,6 @@ import telebot
 from telebot import types 
 import time
 # import math
-from parametrs import is_tg_interface_true
 from risk_management import STATISTIC
 from utils import UTILS
 from risk_management import STOP_LOGIC
@@ -55,7 +54,9 @@ class TEMPLATES(TG_ASSISTENT):
             order_answer = self.make_order(self.symbol, qty, side, market_type, target_price)
             response_list.append(order_answer)
         except Exception as ex:
-            print(ex)
+            print(f"Ошибка в файле main.py, строка 58:\n {ex}")
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, f"Ошибка в файле main.py, строка 58:\n {ex}")
         return response_list, self.response_order_logger(order_answer, side, market_type)
     
     @log_exceptions_decorator
@@ -64,12 +65,21 @@ class TEMPLATES(TG_ASSISTENT):
         side = 'BUY' if self.direction == -1 else 'SELL'
         callbackRate = round(stop_loss_ratio*100, 2)
         if callbackRate < 0.1:
-            print("callbackRate < 0.1")
+            print("callbackRate < 0.1 %")
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, "callbackRate < 0.1 %")
             callbackRate = 0.1 # в % для трелинг стоп лосса
+        elif callbackRate > 10:
+            print("callbackRate > 10 %")
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, "callbackRate > 10 %")
+            callbackRate = 10 # в % для трелинг стоп лосса
         try:
             order_answer = self.tralling_stop_order(self.symbol, qty, side, callbackRate)            
         except Exception as ex:
-            print(ex)
+            print(f"Ошибка в файле main.py, строка 75:\n {ex}")
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, f"Ошибка в файле main.py, строка 75:\n {ex}")
         return self.response_order_logger(order_answer, side, 'TRAILING_STOP_MARKET')
     
     @log_exceptions_decorator
@@ -83,7 +93,9 @@ class TEMPLATES(TG_ASSISTENT):
                 response_success_list.append(self.response_order_logger(order_answer, side, market_type))
                 time.sleep(0.1)
             except Exception as ex:
-                print(ex)
+                print(f"Ошибка в файле main.py, строка 86:\n {ex}")
+                if self.last_message:
+                    self.last_message.text = self.connector_func(self.last_message, f"Ошибка в файле main.py, строка 86:\n {ex}")
         return all(response_success_list)
     
     @log_exceptions_decorator
@@ -148,44 +160,36 @@ class TEMPLATES(TG_ASSISTENT):
     def response_order_logger(self, order_answer, side, market_type): 
         if order_answer is not None:  
             if order_answer['status'] == 'FILLED' or order_answer['status'] == 'NEW':
-                print(f'{side} позиция {market_type} типа была открыта успешно!')
-                # print(order_answer)
                 if self.last_message:
                     self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта успешно!') 
-                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))
-                    
+                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
                 return True
             elif order_answer['status'] == 'PARTIALLY_FILLED':
-                print(f'{side} позиция {market_type} типа была открыта co статусом PARTIALLY_FILLED')
-                # print(order_answer)
                 if self.last_message:
                     self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта co статусом PARTIALLY_FILLED') 
-                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))
-                    
+                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
                 return True
+        print(f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}")
         print(f'{side} позиция {market_type} типа не была открыта...')
-        # print(order_answer)
         if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа не была открыта...') 
-            self.last_message.text = self.connector_func(self.last_message, str(order_answer))
+            self.last_message.text = self.connector_func(self.last_message, f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}") 
+            self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа не была открыта...')
             
         return False
     
     @log_exceptions_decorator
     def martin_gale_regulator(self, last_win_los):
-        if self.cur_martin_gale_counter == self.max_martin_gale_level:
+        if (self.cur_martin_gale_counter == self.max_martin_gale_level) or last_win_los == 1:
             self.cur_martin_gale_counter = 0
             self.depo = self.start_depo
             return False
         if last_win_los == -1:                        
             self.depo = round(self.depo*self.martin_gale_ratio, 2)
             self.cur_martin_gale_counter += 1
-        elif last_win_los == 1: 
-            if self.cur_martin_gale_counter != 0:
-                self.cur_martin_gale_counter -= 1
-                self.depo = round(self.depo/self.martin_gale_ratio, 2)
-        # if self.depo < self.start_depo:
-        #     self.depo = self.start_depo
+        # elif last_win_los == 1: 
+        #     if self.cur_martin_gale_counter != 0:
+        #         self.cur_martin_gale_counter -= 1
+        #         self.depo = round(self.depo/self.martin_gale_ratio, 2)
         return True       
 
 class MAIN_CONTROLLER(TEMPLATES):
@@ -199,41 +203,12 @@ class MAIN_CONTROLLER(TEMPLATES):
             self.last_message.text = self.connector_func(self.last_message, "Устанавливаем кредитное плечо:")
             
         set_leverage_resp = self.set_leverage(self.symbol, self.lev_size)
-        print(set_leverage_resp)
         if self.last_message: 
             self.last_message.text = self.connector_func(self.last_message, str(set_leverage_resp))
             
         return True 
 
-    @log_exceptions_decorator
     def main_func(self):
-        if not is_tg_interface_true:
-            print(f"Привет {self.my_name}! Да благословит вас Бог!")
-            if self.switch_coins_filter:
-                recomended_coins = []            
-                recomended_coins = self.get_top_coins_template()
-                if recomended_coins:
-                    mess_resp = ""
-                    print("Фильтр монет нашел следующие рекомендации:")                
-                    mess_resp = '\n'.join(recomended_coins)
-                    print(mess_resp)                
-                else:
-                    print("На данный момент нет ни одной рекомендации согласно заданным условиям фильтра")
-            input_varios = input("Продолжить/сменить торговые параметры?(1/2)", )
-            if input_varios.strip() == "2":
-                new_trades_input_data = input("Введите торговую пару, размер ставки позиции (в usdt) и кредитное плечо. Например: btcusdt 20 2", )
-                dataa = [x for x in new_trades_input_data.split(' ') if x and x.strip()]
-                self.symbol = dataa[0].upper()  
-                self.start_depo = self.depo = round(float(dataa[1]), 2)
-                self.lev_size = int(float(dataa[2])) 
-                print(f"Текущая торговая пара: {self.symbol}")
-                print(f"Текущий депозит: {self.depo}")
-                if self.set_leverage_template():
-                    print(f"Текущее кредитное плечо: {self.lev_size}")
-                    self.was_change_leverage_true = True
-                else:
-                    print(f"Не удалось установить кредитное плеч...")
-
         self.run_flag = True
         in_position = False
         create_order_success_flag = False
@@ -245,34 +220,31 @@ class MAIN_CONTROLLER(TEMPLATES):
         is_no_signal_count_until = 20
         first_iter_flag = True
         is_show_statistic_true = False
-        next_show_statistic_time = self.get_next_show_statistic_time()
-        
-        # Устанавливаем тип маржи
-        marga_mess = 'Устанавливаем тип маржи'
-        print(marga_mess)
-        if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, marga_mess)
+        try:
+            next_show_statistic_time = self.get_next_show_statistic_time()
             
-        set_margin_resp = self.set_margin_type(self.symbol, self.margin_type)
-        print(set_margin_resp)
-        if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, str(set_margin_resp))
-
-        if not self.was_change_leverage_true:    
+            # Устанавливаем тип маржи
+            if self.last_message: 
+                self.last_message.text = self.connector_func(self.last_message, 'Устанавливаем тип маржи')
+                
+            set_margin_resp = self.set_margin_type(self.symbol, self.margin_type)
+            if self.last_message: 
+                self.last_message.text = self.connector_func(self.last_message, str(set_margin_resp))
             # Устанавливаем кредитное плечо
-            self.set_leverage_template()
-        
-        # Выводим торговые данные
-        trade_data = f"Ваши торговые данные:\nМонета: {self.symbol}\nРазмер ставки: {self.depo}\nКредитное плечо: {self.lev_size}"
-        print(trade_data)
-        if self.last_message:
-            self.last_message.text = self.connector_func(self.last_message, trade_data)
+            if not self.was_change_leverage_true:
+                self.set_leverage_template()
             
-        # Включаем или отключаем Мартин Гейл
-        martin_gale_status = "включен" if self.martin_gale_flag else "отключен"
-        print(f"Мартин Гейл {martin_gale_status}")
-        if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, f"Мартин Гейл {martin_gale_status}")
+            # Выводим торговые данные
+            trade_data = f"Ваши торговые данные:\nМонета: {self.symbol}\nРазмер ставки: {self.depo}\nКредитное плечо: {self.lev_size}"
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, trade_data)
+                
+            # Включаем или отключаем Мартин Гейл
+            martin_gale_status = "включен" if self.martin_gale_flag else "отключен"
+            if self.last_message: 
+                self.last_message.text = self.connector_func(self.last_message, f"Мартин Гейл {martin_gale_status}")
+        except Exception as ex:
+            print(f"Ошибка в файле main.py, строка 244: {ex}")
 
         while True:
             self.cur_klines_data = None
@@ -288,7 +260,7 @@ class MAIN_CONTROLLER(TEMPLATES):
             if first_iter_flag:
                 first_iter_flag = False
                 mess_str = "Бот ищет сигнал для входа в позицию. Процесс поиска может занять неопределенное время. Хорошего вам дня!"
-                print(mess_str)
+                # print(mess_str)
                 if self.last_message: 
                     self.last_message.text = self.connector_func(self.last_message, mess_str)                    
                 time_arg = self.kline_time
@@ -313,7 +285,10 @@ class MAIN_CONTROLLER(TEMPLATES):
                         cur_price, qty, price_precession = self.pre_trading_info_template()
                         # /////////////////// create order logic//////////////////////////////
                         self.direction = 1 if get_signal_val == "LONG_SIGNAL" else -1                                      
-                        response_trading_list, create_order_success_flag = self.make_orders_template(qty, 'MARKET', None)             
+                        response_trading_list, create_order_success_flag = self.make_orders_template(qty, 'MARKET', None)  
+                        if not create_order_success_flag:
+                            print("Что-то пошло не так. Выключаемся!..")
+                            return           
                     else:
                         is_no_signal_counter += 1
                         if is_no_signal_counter % is_no_signal_count_until == 0:
@@ -327,10 +302,9 @@ class MAIN_CONTROLLER(TEMPLATES):
                         #//////////////// закрываем сотавшиеся ордера если таковые имеются:
                         cancel_all_open_orders_replay = self.cancel_all_open_orders(self.symbol)
                         print(cancel_all_open_orders_replay)
-                        if is_tg_interface_true:
-                            log_file = total_log_instance.get_logs()
-                            if self.last_message:
-                                self.bot.send_document(self.last_message.chat.id, log_file)  
+                        log_file = total_log_instance.get_logs()
+                        if self.last_message:
+                            self.bot.send_document(self.last_message.chat.id, log_file)  
                         # //////////// show statistic: ///////////////////////////////
                         last_win_los = 0
                         init_order_price, oposit_order_price = 0, 0
@@ -376,7 +350,9 @@ class MAIN_CONTROLLER(TEMPLATES):
                     enter_price, executed_qty = self.post_open_true_info_template(response_trading_list, qty, cur_price)                     
                     # /////////////////////////////////////////////////////////////////////
                     stop_loss_ratio = self.calculate_stop_loss_ratio(self.direction, enter_price, self.cur_klines_data, self.stop_loss_type, self.default_stop_loss_ratio_val)  
-                    print(f"стоп лосс коэффициент: {stop_loss_ratio}")
+                    # print(f"стоп лосс коэффициент: {stop_loss_ratio}")
+                    if self.last_message:
+                        self.last_message.text = self.connector_func(self.last_message, f"стоп лосс коэффициент: {stop_loss_ratio}") 
 
                     if self.stop_loss_global_type == 'TRAILLING_GLOBAL_TYPE':
                         if not self.make_tralling_sl_template(executed_qty, stop_loss_ratio):
@@ -395,12 +371,12 @@ class MAIN_CONTROLLER(TEMPLATES):
                         if not self.make_sl_tp_template(executed_qty, ['STOP_MARKET', 'TAKE_PROFIT_MARKET'], [target_sl_price, target_tp_price]):
                             print("Что-то пошло не так... закройте позицию вручную!!") 
                             if self.last_message: 
-                                self.last_message.text = self.connector_func(self.last_message, "Что-то пошло не так... закройте позицию вручную!!")  
-                                
+                                self.last_message.text = self.connector_func(self.last_message, "Что-то пошло не так... закройте позицию вручную!!")                               
                             self.stop_bot_flag = True
                             continue
             except Exception as ex:
-                print(ex)
+                print(f"Ошибка в файле main.py, строка 375:\n {ex}")
+                self.stop_bot_flag = True
 
 class TG_MANAGER(MAIN_CONTROLLER):
     def __init__(self):
@@ -499,10 +475,10 @@ class TG_MANAGER(MAIN_CONTROLLER):
                     if candidate_symbols_list:
                         mess_resp = ""
                         pre_recomend_remark = "Фильтр монет нашел следующие рекомендации:"
-                        print(pre_recomend_remark)
+                        # print(pre_recomend_remark)
                         self.bot.send_message(message.chat.id, pre_recomend_remark)
                         mess_resp = '\n'.join(candidate_symbols_list)
-                        print(mess_resp)
+                        # print(mess_resp)
                         self.bot.send_message(message.chat.id, mess_resp)
                     else:
                         is_empty_recomend_list_str = "На данный момент нет ни одной рекомендации согласно заданным условиям фильтра"
@@ -523,6 +499,7 @@ class TG_MANAGER(MAIN_CONTROLLER):
 
             @self.bot.message_handler(func=lambda message: self.settings_redirect_flag)             
             def handle_settings_redirect(message):
+                self.last_message = message
                 self.settings_redirect_flag = False
                 dataa = [x for x in message.text.split(' ') if x and x.strip()]
                 self.symbol = dataa[0].upper()  
@@ -531,20 +508,17 @@ class TG_MANAGER(MAIN_CONTROLLER):
                 self.bot.send_message(message.chat.id, f"Текущая торговая пара: {self.symbol}")
                 self.bot.send_message(message.chat.id, f"Текущий депозит: {self.depo}")
                 if self.set_leverage_template():
-                    self.bot.send_message(message.chat.id, f"Текущее кредитное плечо: {self.lev_size}")
-                    self.was_change_leverage_true = True
+                    self.bot.send_message(message.chat.id, f"Текущее кредитное плечо: {self.lev_size}")                    
                 else:
                     self.bot.send_message(message.chat.id, f"Не удалось установить кредитное плеч...") 
+                self.was_change_leverage_true = True
             # /////////////////////////////////////////////////////////////////////////////// 
             # self.bot.polling()
             self.bot.infinity_polling()
         except Exception as ex: 
             print(ex)
 
-if __name__=="__main__":    
-    if not is_tg_interface_true:
-        MAIN_CONTROLLER().main_func()
-    else:
-        print('Пожалуйста перейдите в интерфейс вашего телеграм бота!')     
-        bot = TG_MANAGER()   
-        bot.run()
+if __name__=="__main__":
+    print('Пожалуйста перейдите в интерфейс вашего телеграм бота!')     
+    bot = TG_MANAGER()   
+    bot.run()

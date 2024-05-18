@@ -1,9 +1,7 @@
 import os
-from dotenv import load_dotenv
 import math
-# from HIDDEN.config import *
-
-is_tg_interface_true = 1 # использовать интерфейс тг, Вкл/выкл: 1/0
+from dotenv import load_dotenv
+load_dotenv()
 
 class PARAMS():
     def __init__(self) -> None:
@@ -15,10 +13,11 @@ class PARAMS():
         # self.symbol = 'BNBUSDT'
         # self.symbol = 'NEARUSDT'
         # self.symbol = '1000PEPEUSDT'
+        self.is_proxies_true = 1
         self.symbol = 'DOGEUSDT'
         self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
         self.depo = 10 # депозит в USDT
-        self.lev_size = 1 # размер кредитного плеча
+        self.lev_size = 2 # размер кредитного плеча
         self.was_change_leverage_true = False
         self.margin_type = 'ISOLATED' # CROSS (изолированная маржа или кросс маржа. Изолированная по дефолту) 
         # ////////////////////
@@ -76,15 +75,15 @@ class PARAMS():
 
     def stop_loss_settings(self):
         # /////////////////////////////////////////////////////
-        self.stop_loss_global_type = 'TRAILLING_GLOBAL_TYPE' # треллинг стоп лосс 
-        # self.stop_loss_global_type = 'FIXED_GLOBAL_TYPE' # фиксированные стоп лосс и тейк профит
+        # self.stop_loss_global_type = 'TRAILLING_GLOBAL_TYPE' # треллинг стоп лосс 
+        self.stop_loss_global_type = 'FIXED_GLOBAL_TYPE' # фиксированные стоп лосс и тейк профит
         # ниже параметры для расчета stop_loss_ratio (stop_loss_ratio = abs(точка входа - точка стоп лосса)/ точка входа):
-        self.ricks_earnings_ratio = '1:3' # соотношение риска к прибыли. только для 'FIXED_GLOBAL_TYPE'
+        self.ricks_earnings_ratio = '1:1.5' # соотношение риска к прибыли. только для 'FIXED_GLOBAL_TYPE'
         # //////// способы вычисления точки стоп лосса: /////////////////
-        self.stop_loss_type = 'LAST_MIN' # стоп лосс по последнуму локальному минимуму или максимуму
+        # self.stop_loss_type = 'LAST_MIN' # стоп лосс по последнуму локальному минимуму или максимуму
         # self.stop_loss_type = 'ABSOLUTE_MIN' # стоп лосс по минимуму или максимуму за определенный период. Берется период равный длине наибольшего периода ema
         # self.stop_loss_type = 'ATR_VAL' # стоп лосс по волатильности умноженный на 1.6
-        # self.stop_loss_type = 'FIXED' # фиксированный стоп. Может быть как в 'TRAILLING_GLOBAL_TYPE' так и в 'FIXED_GLOBAL_TYPE'
+        self.stop_loss_type = 'FIXED' # фиксированный стоп. Может быть как в 'TRAILLING_GLOBAL_TYPE' так и в 'FIXED_GLOBAL_TYPE'
         self.default_stop_loss_ratio_val = 0.01 # дефолтное значение stop_loss_ratio для self.stop_loss_type = 'FIXED' или в результате аномалий при вычислении stop_loss_ratio
         # /////////////////////////////////////////////////////
 
@@ -94,8 +93,8 @@ class PARAMS():
         self.strategy_name = 'ema_crossover_2x' # стратегия прересечения двух ema
         # self.strategy_name = 'ema_crossover_3x' # стратегия прересечения трех ema
         self.ema1_period = 5 # - длина короткой волны
-        self.ema2_period = 10 # - длина длинной волны (для 'ema_crossover_3x' длина средней волны)
-        self.ema3_period = 100 # для 'ema_crossover_2x' установлен в None. Для 'ema_crossover_3x' обязаня быть челым числом большим чем предыдущие две волны например 25
+        self.ema2_period = 20 # - длина длинной волны (для 'ema_crossover_3x' длина средней волны)
+        self.ema3_period = None # для 'ema_crossover_2x' установлен в None. Для 'ema_crossover_3x' обязаня быть челым числом большим чем предыдущие две волны например 25
         if self.strategy_name == 'ema_crossover_2x':
             self.ema3_period = None
         self.ema_list = [self.ema1_period, self.ema2_period, self.ema3_period] # - для тех части...
@@ -103,16 +102,16 @@ class PARAMS():
         self.smoothing_crossover_condition = 0 # рекомендуется в 0. Некое сглаживающие условия для нахождения сигнала. Потенциально может дать больше сигналов, но худшего качества. По желанию 1
 
     def default_statistic_vars(self):
-        self.show_statistic_hour = 21 # время показа дневной статистики (21 - в 9 часов вечера каждого дня)
+        self.show_statistic_hour = 17 # время показа дневной статистики (21 - в 9 часов вечера каждого дня)
         self.win_los = 0 # результат последней сделки (в плюс или в минус)
         self.daily_trade_history_list = [] # список трейдов (точки входа и точки выхода в позиции) за все время торгов
         self.total_trade_history_list = [] # список трейдов (точки входа и точки выхода в позиции) за все время торгов
 
     def martin_gale_settings(self):
         self.martin_gale_flag = 0 # мартин гейл отключен. Включить/выкл: - 1/0
-        self.martin_gale_ratio = 2 # множитель депозита
+        self.martin_gale_ratio = 2.5 # множитель депозита
         self.cur_martin_gale_counter = 0 # всегда равен 0
-        self.max_martin_gale_level = 4 # сколько раз умножать позицию
+        self.max_martin_gale_level = 2 # сколько раз умножать позицию
 
     # /////////// переменные... - суто по тех части: ///////////////////////
     def default_tg_vars(self): 
@@ -128,17 +127,6 @@ class PARAMS():
         self.settings_redirect_flag = 0
 
     def init_keys(self): 
-        # # ////////////////////// инициализация ключей: ///////////////////////////////
-        # self.api_key = BINANCE_API_PUBLIC_KEY
-        # self.api_secret = BINANCE_API_PRIVATE_KEY 
-        # # print(self.api_secret)
-        # self.tg_api_token = TG_TOKEN
-        # self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
-        # self.seq_control_token = ACESS_TOKEN
-        # self.proxy_host = proxy_host
-        # self.proxy_port = proxy_port
-        # self.proxy_username = proxy_username
-        # self.proxy_password = proxy_password
         #////////////////////////////// для деплоя на сервер:
         self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
         self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
@@ -150,6 +138,3 @@ class PARAMS():
         self.proxy_port = os.getenv("proxy_port", "")
         self.proxy_username = os.getenv("proxy_username", "")
         self.proxy_password = os.getenv("proxy_password", "")
-
-# PARAMS()
-   
