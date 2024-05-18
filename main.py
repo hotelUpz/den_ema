@@ -41,9 +41,105 @@ class TG_ASSISTENT(CONNECTOR_TG):
                 time.sleep(1.1 + i*decimal)                   
         return None
     
-class TEMPLATES(TG_ASSISTENT):
+class INTERFACES(TG_ASSISTENT):
+    def __init__(self):
+        super().__init__()  
+    
+    @log_exceptions_decorator
+    def post_open_true_info(self, response_trading_list, qty, cur_price):
+        # //////////////////////////////////////////////////////////////////
+        executed_qty = float(response_trading_list[0].get('executedQty', qty))
+        enter_price = float(response_trading_list[0].get('avgPrice', cur_price)) 
+        # order_id = response_trading_list[0].get('orderId', None)
+        print("qty, enter_price:")
+        print(f"{executed_qty}, {enter_price}")
+        if self.last_message:
+            self.last_message.text = self.connector_func(self.last_message, "qty, enter_price:")
+            self.last_message.text = self.connector_func(self.last_message, f"{executed_qty}, {enter_price}") 
+            
+        self.from_anomal_view_to_normal([executed_qty, enter_price])  
+        return enter_price, executed_qty 
+    
+    @log_exceptions_decorator
+    def post_trade_info_raport(self, last_signal, last_win_los):
+        post_trade_piece_message = ""
+        if last_signal == 'LONG_SIGNAL':
+            post_trade_piece_message = 'Лонговая' 
+        elif last_signal == 'SHORT_SIGNAL':
+            post_trade_piece_message = 'Шортовая' 
+        print(f"{post_trade_piece_message} позиция была закрыта")
+        if self.last_message:
+            self.last_message.text = self.connector_func(self.last_message, f"{post_trade_piece_message} позиция была закрыта") 
+                
+        if last_win_los == 1:
+            print(f"Последняя {post_trade_piece_message} сделка была закрыта в плюс") 
+            if self.last_message: 
+                self.last_message.text = self.connector_func(self.last_message, f"Последняя {post_trade_piece_message} сделка была закрыта в плюс") 
+                
+        elif last_win_los == -1:
+            print(f"Последняя {post_trade_piece_message} сделка была закрыта в минус") 
+            if self.last_message:                    
+                self.last_message.text = self.connector_func(self.last_message, f"Последняя {post_trade_piece_message} сделка была закрыта в минус")    
+        else:
+            print(f"Bo время попытки проанализировать последнюю сделку возникли какие то трудности. Рекомундуем войти в интерфейс фьючерсной торговли вашего приложения Binance и проверить ситуацию. Скоро бот будет остановлен")
+            if self.last_message:
+                self.last_message.text = self.connector_func(self.last_message, f"Bo время попытки проанализировать последнюю сделку возникли какие то трудности. Рекомундуем войти в интерфейс фьючерсной торговли вашего приложения Binance и проверить ситуацию. Скоро бот будет остановлен") 
+                
+            return False
+        return True
+    
+    @log_exceptions_decorator
+    def response_order_logger(self, order_answer, side, market_type): 
+        if order_answer is not None:  
+            if order_answer.get('status') == 'FILLED' or order_answer.get('status') == 'NEW':
+                if self.last_message:
+                    self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта успешно!') 
+                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
+                return True
+            elif order_answer.get('status') == 'PARTIALLY_FILLED':
+                if self.last_message:
+                    self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта co статусом PARTIALLY_FILLED') 
+                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
+                return True
+        print(f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}")
+        print(f'{side} позиция {market_type} типа не была открыта...')
+        if self.last_message: 
+            self.last_message.text = self.connector_func(self.last_message, f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}") 
+            self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа не была открыта...')
+            
+        return False
+    
+class TEMPLATES(INTERFACES):
     def __init__(self):  
         super().__init__()
+
+    @log_exceptions_decorator
+    def set_leverage_template(self):
+        print("Устанавливаем кредитное плечо:")
+        if self.last_message:
+            self.last_message.text = self.connector_func(self.last_message, "Устанавливаем кредитное плечо:")
+            
+        set_leverage_resp = self.set_leverage(self.symbol, self.lev_size)
+        if self.last_message: 
+            self.last_message.text = self.connector_func(self.last_message, str(set_leverage_resp))            
+        return True 
+    
+    @log_exceptions_decorator
+    def pre_trading_template(self):
+        symbol_info = self.get_excangeInfo() 
+        # print(symbol_info)
+        self.cur_klines_data = self.get_klines(self.symbol) 
+        cur_price = self.cur_klines_data['Close'].iloc[-1]
+        # print(f"cur_price: {cur_price}")
+        qty, price_precession = self.usdt_to_qnt_converter(self.symbol, self.depo, symbol_info, cur_price)
+        print("qty, cur_price:")
+        print(f"{qty}, {cur_price}")
+        if self.last_message:
+            self.last_message.text = self.connector_func(self.last_message, "qty, cur_price:")
+            self.last_message.text = self.connector_func(self.last_message, f"{qty}, {price_precession}") 
+            
+        # self.from_anomal_view_to_normal([qty, cur_price]) 
+        return cur_price, qty, price_precession 
     
     @log_exceptions_decorator
     def make_orders_template(self, qty, market_type, target_price):
@@ -99,87 +195,8 @@ class TEMPLATES(TG_ASSISTENT):
         return all(response_success_list)
     
     @log_exceptions_decorator
-    def pre_trading_info_template(self):
-        symbol_info = self.get_excangeInfo() 
-        self.cur_klines_data = self.get_klines(self.symbol) 
-        cur_price = self.cur_klines_data['Close'].iloc[-1]
-        qty, price_precession = self.usdt_to_qnt_converter(self.symbol, self.depo, symbol_info, cur_price)
-        print("qty, cur_price:")
-        print(f"{qty}, {price_precession}")
-        if self.last_message:
-            self.last_message.text = self.connector_func(self.last_message, "qty, cur_price:")
-            self.last_message.text = self.connector_func(self.last_message, f"{qty}, {price_precession}") 
-            
-        self.from_anomal_view_to_normal([qty, cur_price]) 
-        return cur_price, qty, price_precession   
-    
-    @log_exceptions_decorator
-    def post_open_true_info_template(self, response_trading_list, qty, cur_price):
-        # //////////////////////////////////////////////////////////////////
-        executed_qty = float(response_trading_list[0].get('executedQty', qty))
-        enter_price = float(response_trading_list[0].get('avgPrice', cur_price)) 
-        # order_id = response_trading_list[0].get('orderId', None)
-        print("qty, enter_price:")
-        print(f"{executed_qty}, {enter_price}")
-        if self.last_message:
-            self.last_message.text = self.connector_func(self.last_message, "qty, enter_price:")
-            self.last_message.text = self.connector_func(self.last_message, f"{executed_qty}, {enter_price}") 
-            
-        self.from_anomal_view_to_normal([executed_qty, enter_price])  
-        return enter_price, executed_qty 
-    
-    @log_exceptions_decorator
-    def post_trade_info_viwer(self, last_signal, last_win_los):
-        post_trade_piece_message = ""
-        if last_signal == 'LONG_SIGNAL':
-            post_trade_piece_message = 'Лонговая' 
-        elif last_signal == 'SHORT_SIGNAL':
-            post_trade_piece_message = 'Шортовая' 
-        print(f"{post_trade_piece_message} позиция была закрыта")
-        if self.last_message:
-            self.last_message.text = self.connector_func(self.last_message, f"{post_trade_piece_message} позиция была закрыта") 
-                
-        if last_win_los == 1:
-            print(f"Последняя {post_trade_piece_message} сделка была закрыта в плюс") 
-            if self.last_message: 
-                self.last_message.text = self.connector_func(self.last_message, f"Последняя {post_trade_piece_message} сделка была закрыта в плюс") 
-                
-        elif last_win_los == -1:
-            print(f"Последняя {post_trade_piece_message} сделка была закрыта в минус") 
-            if self.last_message:                    
-                self.last_message.text = self.connector_func(self.last_message, f"Последняя {post_trade_piece_message} сделка была закрыта в минус")    
-        else:
-            print(f"Bo время попытки проанализировать последнюю сделку возникли какие то трудности. Рекомундуем войти в интерфейс фьючерсной торговли вашего приложения Binance и проверить ситуацию. Скоро бот будет остановлен")
-            if self.last_message:
-                self.last_message.text = self.connector_func(self.last_message, f"Bo время попытки проанализировать последнюю сделку возникли какие то трудности. Рекомундуем войти в интерфейс фьючерсной торговли вашего приложения Binance и проверить ситуацию. Скоро бот будет остановлен") 
-                
-            return False
-        return True
-    
-    @log_exceptions_decorator
-    def response_order_logger(self, order_answer, side, market_type): 
-        if order_answer is not None:  
-            if order_answer['status'] == 'FILLED' or order_answer['status'] == 'NEW':
-                if self.last_message:
-                    self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта успешно!') 
-                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
-                return True
-            elif order_answer['status'] == 'PARTIALLY_FILLED':
-                if self.last_message:
-                    self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа была открыта co статусом PARTIALLY_FILLED') 
-                    self.last_message.text = self.connector_func(self.last_message, str(order_answer))                    
-                return True
-        print(f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}")
-        print(f'{side} позиция {market_type} типа не была открыта...')
-        if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, f"При попытке создания ордера возникла ошибка. Текст ответа:\n {order_answer}") 
-            self.last_message.text = self.connector_func(self.last_message, f'{side} позиция {market_type} типа не была открыта...')
-            
-        return False
-    
-    @log_exceptions_decorator
-    def martin_gale_regulator(self, last_win_los):
-        if (self.cur_martin_gale_counter == self.max_martin_gale_level) or last_win_los == 1:
+    def martin_gale_template(self, last_win_los):
+        if (self.cur_martin_gale_counter == self.max_martin_gale_level) or (last_win_los == 1):
             self.cur_martin_gale_counter = 0
             self.depo = self.start_depo
             return False
@@ -190,22 +207,11 @@ class TEMPLATES(TG_ASSISTENT):
         #     if self.cur_martin_gale_counter != 0:
         #         self.cur_martin_gale_counter -= 1
         #         self.depo = round(self.depo/self.martin_gale_ratio, 2)
-        return True       
+        return True  
 
 class MAIN_CONTROLLER(TEMPLATES):
     def __init__(self):  
-        super().__init__() 
-
-    @log_exceptions_decorator
-    def set_leverage_template(self):
-        print("Устанавливаем кредитное плечо:")
-        if self.last_message:
-            self.last_message.text = self.connector_func(self.last_message, "Устанавливаем кредитное плечо:")
-            
-        set_leverage_resp = self.set_leverage(self.symbol, self.lev_size)
-        if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, str(set_leverage_resp))            
-        return True 
+        super().__init__()
 
     def main_func(self):
         self.run_flag = True
@@ -268,7 +274,11 @@ class MAIN_CONTROLLER(TEMPLATES):
             try:
                 if not in_position:
                     self.cur_klines_data = self.get_klines(self.symbol)
+                    # print(self.cur_klines_data)
                     get_signal_val = self.get_signals(self.strategy_name, self.smoothing_crossover_condition, self.cur_klines_data, self.ema_list)
+                    # test:
+                    # get_signal_val = "LONG_SIGNAL"
+                    # get_signal_val = "SHORT_SIGNAL"
                     if get_signal_val:
                         is_no_signal_counter = 0                    
                         print(get_signal_val)
@@ -280,9 +290,14 @@ class MAIN_CONTROLLER(TEMPLATES):
                         price_precession = None
                         self.direction = None
                         response_trading_list = None
-                        cur_price, qty, price_precession = self.pre_trading_info_template()
+                        cur_price, qty, price_precession = self.pre_trading_template()
+                        if qty == "Too_litle_size":
+                            print("Размер депозита для данной монеты слишком мал. Выберите другие опции и попробуйте еще раз...")
+                            self.last_message.text = self.connector_func(self.last_message, "Размер депозита для данной монеты слишком мал. Выберите другие опции и попробуйте еще раз...") 
+                            return
+
                         # /////////////////// create order logic//////////////////////////////
-                        self.direction = 1 if get_signal_val == "LONG_SIGNAL" else -1                                      
+                        self.direction = 1*self.is_reverse_signal if get_signal_val == "LONG_SIGNAL" else -1*self.is_reverse_signal                                     
                         response_trading_list, create_order_success_flag = self.make_orders_template(qty, 'MARKET', None)  
                         if not create_order_success_flag:
                             print("Что-то пошло не так. Выключаемся!..")
@@ -310,7 +325,7 @@ class MAIN_CONTROLLER(TEMPLATES):
                         last_depo = 0
                         last_win_los, init_order_price, oposit_order_price, last_depo = self.last_statistic(self.symbol)  
                         self.daily_trade_history_list.append((last_win_los, init_order_price, oposit_order_price, last_depo))                  
-                        if not self.post_trade_info_viwer(last_signal, last_win_los):
+                        if not self.post_trade_info_raport(last_signal, last_win_los):
                             self.stop_bot_flag = True
                             continue                 
 
@@ -325,7 +340,7 @@ class MAIN_CONTROLLER(TEMPLATES):
 
                         # ////////////////// мартин гейл футкция: //////////////////////////////
                         if self.martin_gale_flag:
-                            if not self.martin_gale_regulator(last_win_los):
+                            if not self.martin_gale_template(last_win_los):
                                 print(f"Размер депозита был сброшен до начального и составляет: {self.depo}")
                                 if self.last_message:
                                     self.last_message.text = self.connector_func(self.last_message, f"Размер депозита был сброшен до начального и составляет: {self.depo}")                                    
@@ -346,10 +361,10 @@ class MAIN_CONTROLLER(TEMPLATES):
                     enter_price = None 
                     stop_loss_ratio = None                   
                     # //////////////////////////////////////////////////////////////////
-                    enter_price, executed_qty = self.post_open_true_info_template(response_trading_list, qty, cur_price)                     
+                    enter_price, executed_qty = self.post_open_true_info(response_trading_list, qty, cur_price)                     
                     # /////////////////////////////////////////////////////////////////////
                     stop_loss_ratio = self.calculate_stop_loss_ratio(self.direction, enter_price, self.cur_klines_data, self.stop_loss_type, self.default_stop_loss_ratio_val)  
-                    # print(f"стоп лосс коэффициент: {stop_loss_ratio}")
+                    print(f"стоп лосс коэффициент: {stop_loss_ratio}")
                     if self.last_message:
                         self.last_message.text = self.connector_func(self.last_message, f"стоп лосс коэффициент: {stop_loss_ratio}") 
 
@@ -373,6 +388,7 @@ class MAIN_CONTROLLER(TEMPLATES):
                                 self.last_message.text = self.connector_func(self.last_message, "Что-то пошло не так... закройте позицию вручную!!")                               
                             self.stop_bot_flag = True
                             continue
+                # self.stop_bot_flag = True
             except Exception as ex:
                 print(f"Ошибка в файле main.py, строка 375:\n {ex}")
                 self.stop_bot_flag = True

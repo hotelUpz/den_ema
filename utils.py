@@ -54,11 +54,13 @@ class UTILS():
         # print(symbol_data)
         # //////////////////////
         quantity_precision = int(float(symbol_data['quantityPrecision']))
-        price_precision = int(symbol_data['pricePrecision']) 
-        # print(f"quantity_precision: {quantity_precision}")
+        price_precision = int(float(symbol_data['pricePrecision']))
+        print(f"quantity_precision: {quantity_precision}")
         min_notional = int(float(next((f['notional'] for f in symbol_data['filters'] if f['filterType'] == 'MIN_NOTIONAL'), 0)))
         if depo <= min_notional:
             depo = min_notional
+        if quantity_precision == 0 and (depo / cur_price) < 1:
+            return "Too_litle_size", None            
         return round(depo / cur_price, quantity_precision), price_precision
     
     @log_exceptions_decorator

@@ -56,6 +56,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         return self.HTTP_request(self.all_tikers_url, method='GET', headers=self.headers, proxies=self.proxiess)
     
     # //////
+    @log_exceptions_decorator
     def get_total_balance(self, ticker):
         params = {}
         params['recvWindow'] = 5000

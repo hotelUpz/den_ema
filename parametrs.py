@@ -11,13 +11,14 @@ class PARAMS():
         # self.symbol = 'BTCUSDT' 
         # self.symbol = 'ARBUSDT' 
         # self.symbol = 'BNBUSDT'
-        # self.symbol = 'NEARUSDT'
+        self.symbol = 'SOLUSDT'
         # self.symbol = '1000PEPEUSDT'
         self.is_proxies_true = 1
-        self.symbol = 'DOGEUSDT'
+        self.is_reverse_signal = 1 # Вкл/Выкл: 1/-1
+        # self.symbol = 'SOLUSDT'
         self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
         self.depo = 10 # депозит в USDT
-        self.lev_size = 2 # размер кредитного плеча
+        self.lev_size = 1 # размер кредитного плеча
         self.was_change_leverage_true = False
         self.margin_type = 'ISOLATED' # CROSS (изолированная маржа или кросс маржа. Изолированная по дефолту) 
         # ////////////////////
@@ -41,6 +42,7 @@ class PARAMS():
         self.all_tikers_url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
         self.get_all_orders_url = 'https://fapi.binance.com/fapi/v1/allOrders'
         self.cancel_all_orders_url = 'https://fapi.binance.com/fapi/v1/allOpenOrders'
+        self.balance_url = 'https://fapi.binance.com/fapi/v2/balance'
         # self.current_price_url = "https://fapi.binance.com/fapi/v1/ticker/price"
         # self.get_all_open_orders_url = 'https://fapi.binance.com/fapi/v1/openOrders'
         # self.account_url = 'https://fapi.binance.com/fapi/v2/account'
@@ -131,7 +133,7 @@ class PARAMS():
         self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
         self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
         self.tg_api_token = os.getenv("TG_TOKEN", "")
-        # print(self.tg_api_token)
+        print(self.tg_api_token)
         self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
         self.seq_control_token = os.getenv("ACESS_TOKEN", "")
         self.proxy_host = os.getenv("proxy_host", "")
