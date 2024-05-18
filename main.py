@@ -204,8 +204,7 @@ class MAIN_CONTROLLER(TEMPLATES):
             
         set_leverage_resp = self.set_leverage(self.symbol, self.lev_size)
         if self.last_message: 
-            self.last_message.text = self.connector_func(self.last_message, str(set_leverage_resp))
-            
+            self.last_message.text = self.connector_func(self.last_message, str(set_leverage_resp))            
         return True 
 
     def main_func(self):
@@ -222,10 +221,8 @@ class MAIN_CONTROLLER(TEMPLATES):
         is_show_statistic_true = False
         try:
             next_show_statistic_time = self.get_next_show_statistic_time()
-            
-            # Устанавливаем тип маржи
-            if self.last_message: 
-                self.last_message.text = self.connector_func(self.last_message, 'Устанавливаем тип маржи')
+            print('Устанавливаем тип маржи')
+            self.last_message.text = self.connector_func(self.last_message, 'Устанавливаем тип маржи')
                 
             set_margin_resp = self.set_margin_type(self.symbol, self.margin_type)
             if self.last_message: 
@@ -236,6 +233,7 @@ class MAIN_CONTROLLER(TEMPLATES):
             
             # Выводим торговые данные
             trade_data = f"Ваши торговые данные:\nМонета: {self.symbol}\nРазмер ставки: {self.depo}\nКредитное плечо: {self.lev_size}"
+            print(trade_data)
             if self.last_message:
                 self.last_message.text = self.connector_func(self.last_message, trade_data)
                 
@@ -260,7 +258,7 @@ class MAIN_CONTROLLER(TEMPLATES):
             if first_iter_flag:
                 first_iter_flag = False
                 mess_str = "Бот ищет сигнал для входа в позицию. Процесс поиска может занять неопределенное время. Хорошего вам дня!"
-                # print(mess_str)
+                print(mess_str)
                 if self.last_message: 
                     self.last_message.text = self.connector_func(self.last_message, mess_str)                    
                 time_arg = self.kline_time
@@ -288,6 +286,7 @@ class MAIN_CONTROLLER(TEMPLATES):
                         response_trading_list, create_order_success_flag = self.make_orders_template(qty, 'MARKET', None)  
                         if not create_order_success_flag:
                             print("Что-то пошло не так. Выключаемся!..")
+                            self.last_message.text = self.connector_func(self.last_message, "Что-то пошло не так. Выключаемся!..")  
                             return           
                     else:
                         is_no_signal_counter += 1
@@ -499,7 +498,7 @@ class TG_MANAGER(MAIN_CONTROLLER):
 
             @self.bot.message_handler(func=lambda message: self.settings_redirect_flag)             
             def handle_settings_redirect(message):
-                self.last_message = message
+                # self.last_message = message
                 self.settings_redirect_flag = False
                 dataa = [x for x in message.text.split(' ') if x and x.strip()]
                 self.symbol = dataa[0].upper()  
