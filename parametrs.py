@@ -13,7 +13,7 @@ class PARAMS():
         # self.symbol = 'BNBUSDT'
         self.symbol = 'SOLUSDT'
         # self.symbol = '1000PEPEUSDT'
-        self.is_proxies_true = 0
+        self.is_proxies_true = 1
         self.is_reverse_signal = 1 # Вкл/Выкл: 1/-1
         # self.symbol = 'SOLUSDT'
         self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
