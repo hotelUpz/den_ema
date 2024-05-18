@@ -13,7 +13,7 @@ class PARAMS():
         # self.symbol = 'BNBUSDT'
         self.symbol = 'SOLUSDT'
         # self.symbol = '1000PEPEUSDT'
-        self.is_proxies_true = 1
+        self.is_proxies_true = 0
         self.is_reverse_signal = 1 # Вкл/Выкл: 1/-1
         # self.symbol = 'SOLUSDT'
         self.start_depo = 10 # начальное значение депо которое сбрасфывается после тог как текущий self.cur_martin_gale_multiplier достигнет максимального self.max_martin_gale_multiplier (см. настройки мартингейла)
@@ -133,7 +133,7 @@ class PARAMS():
         self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
         self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
         self.tg_api_token = os.getenv("TG_TOKEN", "")
-        print(self.tg_api_token)
+        # print(self.tg_api_token)
         self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
         self.seq_control_token = os.getenv("ACESS_TOKEN", "")
         self.proxy_host = os.getenv("proxy_host", "")
