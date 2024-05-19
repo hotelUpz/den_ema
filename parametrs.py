@@ -78,8 +78,8 @@ class PARAMS():
 
     def stop_loss_settings(self):
         # /////////////////////////////////////////////////////
-        self.stop_loss_global_type = 'TRAILLING_GLOBAL_TYPE' # треллинг стоп лосс 
-        # self.stop_loss_global_type = 'FIXED_GLOBAL_TYPE' # фиксированные стоп лосс и тейк профит
+        # self.stop_loss_global_type = 'TRAILLING_GLOBAL_TYPE' # треллинг стоп лосс 
+        self.stop_loss_global_type = 'FIXED_GLOBAL_TYPE' # фиксированные стоп лосс и тейк профит
         # ниже параметры для расчета stop_loss_ratio (stop_loss_ratio = abs(точка входа - точка стоп лосса)/ точка входа):
         self.ricks_earnings_ratio = '1:1.5' # соотношение риска к прибыли. только для 'FIXED_GLOBAL_TYPE'
         # //////// способы вычисления точки стоп лосса: /////////////////
