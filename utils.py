@@ -5,20 +5,20 @@ import math
 import decimal
 from log import log_exceptions_decorator
 
-# def server_to_utc_difference_counter():
-#     server_time_naive = dttm.now()
-#     print(f"server_time_naive: {server_time_naive}")
-#     utc_time = dttm.utcnow()
-#     print(f"utc_time: {utc_time}")
-#     time_difference = server_time_naive - utc_time
-#     total_seconds = abs(time_difference.total_seconds()) * 1000
-#     total_seconds = math.ceil(total_seconds)
-#     if total_seconds < 10:
-#         return 0
-#     return total_seconds
+def server_to_utc_difference_counter():
+    server_time_naive = dttm.now()
+    # print(f"server_time_naive: {server_time_naive}")
+    utc_time = dttm.utcnow()
+    # print(f"utc_time: {utc_time}")
+    time_difference = server_time_naive - utc_time
+    total_seconds = abs(time_difference.total_seconds()) * 1000
+    total_seconds = math.ceil(total_seconds)
+    if total_seconds < 10:
+        return 0
+    return total_seconds
 
-# time_correction = server_to_utc_difference_counter()
-# print("ms difference:", time_correction)
+time_correction_val = server_to_utc_difference_counter()
+# print("Разница между серверным временем в милисекундах:", time_correction_val)
 
 class UTILS():
     def __init__(self):  
@@ -31,6 +31,13 @@ class UTILS():
         datetime_object = dttm.fromtimestamp(current_time)       
         formatted_time = datetime_object.strftime('%d')
         return int(formatted_time) 
+        
+    def milliseconds_to_datetime(self, milliseconds):
+        seconds, milliseconds = divmod(milliseconds, 1000)
+        time = dttm.utcfromtimestamp(seconds)
+        # milliseconds_str = str(milliseconds).zfill(3)
+        # return time.strftime('%Y-%m-%d %H:%M:%S') + '.' + milliseconds_str
+        return time.strftime('%Y-%m-%d %H:%M:%S')    
     
     @log_exceptions_decorator
     def time_calibrator(self, kline_time, time_frame):
@@ -70,4 +77,4 @@ class UTILS():
         for x in strange_list:
             x_f = decimal.Decimal(str(x))
             normal_list.append(format(x_f, 'f'))
-        print(' '.join(normal_list))                              
+        print(', '.join(normal_list))                         

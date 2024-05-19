@@ -55,11 +55,17 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         super().__init__()       
 # ////////////////////////////////////////get api: //////////////////////////////////
     @log_exceptions_decorator
-    def get_excangeInfo(self):     
+    def get_excangeInfo(self):   
+        params = {
+            'recvWindow': 20000
+        }  
         return self.HTTP_request('other', self.exchangeInfo_url, method='GET', headers=self.headers, proxies=self.proxiess)
     
     @log_exceptions_decorator
-    def get_all_tickers(self):       
+    def get_all_tickers(self): 
+        params = {
+            'recvWindow': 20000
+        }       
         return self.HTTP_request('other', self.all_tikers_url, method='GET', headers=self.headers, proxies=self.proxiess)
     
     # //////
@@ -75,6 +81,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
     def get_all_orders(self, symbol):
         params = {
             'symbol': symbol,
+            'recvWindow': 20000
             # 'limit': limit
         }
         params = self.get_signature(params)
@@ -87,6 +94,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
         klines = None       
         params = {}
         params["symbol"] = symbol
+        params['recvWindow'] = 20000
         params["interval"] = self.interval
         params["limit"] = int(self.max_period*2.5)
         params = self.get_signature(params)
@@ -103,7 +111,8 @@ class BINANCE_API(CONNECTOR_BINANCEE):
     def is_closing_position_true(self, symbol):
         positions = None
         params = {
-            "symbol": symbol
+            "symbol": symbol,
+            'recvWindow': 20000
         }
         params = self.get_signature(params)
         positions = requests.get(
@@ -135,6 +144,7 @@ class BINANCE_API(CONNECTOR_BINANCEE):
     def set_leverage(self, symbol, lev_size):                     
         params = {}
         params['symbol'] = symbol
+        params['recvWindow'] = 20000
         params['leverage'] = lev_size
         params = self.get_signature(params)
         # print(params)
@@ -177,10 +187,11 @@ class BINANCE_API(CONNECTOR_BINANCEE):
     @log_exceptions_decorator
     def cancel_all_open_orders(self, symbol):
         params = {
-            'symbol': symbol            
+            'symbol': symbol,
+            'recvWindow': 20000         
         }
         params = self.get_signature(params)
         resp = self.HTTP_request('other', self.cancel_all_orders_url, method='DELETE', headers=self.headers, params=params, proxies=self.proxiess)
         return resp
 
-print(BINANCE_API().set_margin_type('ETHUSDT', 'ISOLATED'))
+# print(BINANCE_API().set_margin_type('ETHUSDT', 'ISOLATED'))

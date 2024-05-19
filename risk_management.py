@@ -14,7 +14,7 @@ class STOP_LOGIC(STRATEGY):
             return
         stop_loss_ratio = None
         period = int(candles_df.shape[0]/ 2.5) + 1  
-        if stop_loss_type == 'FIXED':
+        if stop_loss_type == 'STATIC':
             return fixed_stop_loss_ratio_val
         if stop_loss_type == 'ATR_VAL':
             atr_period = period 
@@ -116,11 +116,14 @@ class STATISTIC(COInN_FILTERR):
     def statistic_calculations(self, daily_trade_history_list):
         result_statistic_dict = {}
         result_statistic_dict["symbol"] = self.symbol
-        win_to_loss_statistik = f"0:0"
+        win_to_loss_statistik = "0:0"
         max_profit_abs = 0
-        max_drawdown_abs = 0
+        max_loss_abs = 0
+        best_performance = 0
+        max_drawdown = 0
         total_profit_abs = 0
         total_losses_abs = 0
+
         if not isinstance(daily_trade_history_list, list) or len(daily_trade_history_list) == 0:
             return "Нет данных для анализа"
 
@@ -129,29 +132,64 @@ class STATISTIC(COInN_FILTERR):
             loss_count = sum(1 for win_los, _, _, _ in daily_trade_history_list if win_los == -1)
             win_to_loss_statistik = f"{win_count}:{loss_count}"
         except Exception as ex:
-            print(ex)
+            print(f"Error calculating win/loss statistics: {ex}")
         result_statistic_dict["Отношение Плюсовых сделок к Минусовым"] = win_to_loss_statistik
 
         try:
-            max_profit_abs = max((abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == 1)
-            max_drawdown_abs = min(-1 * (abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == -1)
-            total_profit_abs = sum((abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == 1)
-            total_losses_abs = sum(-1 * (abs(init_order_price - oposit_order_price) / init_order_price) * last_depo for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list if win_los == -1)
+            total_result_list = []
+            for win_los, init_order_price, oposit_order_price, last_depo in daily_trade_history_list:
+                if win_los == 1:
+                    total_result_list.append((abs(init_order_price - oposit_order_price) / init_order_price) * last_depo)
+                elif win_los == -1:
+                    total_result_list.append(-1 * (abs(init_order_price - oposit_order_price) / init_order_price) * last_depo)
+
+            if total_result_list:
+                max_profit_abs = max(x for x in total_result_list if x > 0)
+                max_loss_abs = min(x for x in total_result_list if x < 0)
+                total_profit_abs = sum(x for x in total_result_list if x > 0)
+                total_losses_abs = sum(x for x in total_result_list if x < 0)
+
+                current_positive_sum = 0
+                current_negative_sum = 0
+
+                for t in total_result_list:
+                    if t > 0:
+                        current_positive_sum += t
+                        if current_negative_sum < 0:
+                            max_drawdown = min(max_drawdown, current_negative_sum)
+                            current_negative_sum = 0
+                    elif t < 0:
+                        current_negative_sum += t
+                        if current_positive_sum > 0:
+                            best_performance = max(best_performance, current_positive_sum)
+                            current_positive_sum = 0
+
+                best_performance = max(best_performance, current_positive_sum)
+                max_drawdown = min(max_drawdown, current_negative_sum)
         except Exception as ex:
-            print(ex)
-        result_statistic_dict["Максимальная прибыль ($)"] = max_profit_abs
-        result_statistic_dict["Максимальная просадка ($)"] = max_drawdown_abs
-        result_statistic_dict["Общая прибыль ($)"] = total_profit_abs
-        result_statistic_dict["Общий убыток ($)"] = total_losses_abs
-        result_statistic_dict["Доход (без учета комиссии) ($)"] = total_profit_abs - abs(total_losses_abs)
-        if result_statistic_dict["Доход (без учета комиссии) ($)"] > 0:
+            print(f"Error calculating profit and loss statistics: {ex}")
+
+        result_statistic_dict["Суммарный доход ($)"] = total_profit_abs
+        result_statistic_dict["Суммарный убыток ($)"] = total_losses_abs
+        result_statistic_dict["Прибыль (без учета комиссии) ($)"] = total_profit_abs - abs(total_losses_abs)
+
+        if result_statistic_dict["Прибыль (без учета комиссии) ($)"] > 0:
             result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в плюс"
-        elif result_statistic_dict["Доход (без учета комиссии) ($)"] < 0:
+        elif result_statistic_dict["Прибыль (без учета комиссии) ($)"] < 0:
             result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в минус"
         else:
             result_statistic_dict["Результат торговли за день"] = "Сегодня стратегия сработала в ноль"
-        result_string = ""
-        for key, value in result_statistic_dict.items():
-            result_string += f"{key}: {value}\n"
 
+        result_statistic_dict["Максимально прибыльная сделка ($)"] = max_profit_abs
+        result_statistic_dict["Максимально убыточная сделка ($)"] = max_loss_abs
+        result_statistic_dict["Перфоманс (максимальная сумма серии удачных сделок) ($)"] = best_performance
+        result_statistic_dict["Максимальная просадка ($)"] = max_drawdown
+
+        result_string = "\n".join(f"{key}: {value}" for key, value in result_statistic_dict.items())
         return result_string
+    
+# time_correction_val = 10800000
+# target_time = STATISTIC().get_next_show_statistic_time(time_correction_val)
+# print(target_time)
+# target_time = datetime(2024, 5, 19, 22, 9, 0, 111239)
+# print(STATISTIC().show_statistic_signal(target_time, time_correction_val))
