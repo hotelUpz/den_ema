@@ -1,8 +1,8 @@
-# import os
+import os
 import math
-from HIDDEN.config import *
-# from dotenv import load_dotenv
-# load_dotenv()
+# from HIDDEN.config import *
+from dotenv import load_dotenv
+load_dotenv()
 
 class PARAMS():
     def __init__(self) -> None:
@@ -130,25 +130,25 @@ class PARAMS():
         self.settings_redirect_flag = 0
 
     def init_keys(self): 
-        # #////////////////////////////// для деплоя на сервер:
-        # self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
-        # self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
-        # self.tg_api_token = os.getenv("TG_TOKEN", "")
-        # # print(self.tg_api_token)
-        # self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
-        # self.seq_control_token = os.getenv("ACESS_TOKEN", "")
-        # self.proxy_host = os.getenv("proxy_host", "")
-        # self.proxy_port = os.getenv("proxy_port", "")
-        # self.proxy_username = os.getenv("proxy_username", "")
-        # self.proxy_password = os.getenv("proxy_password", "")
+        #////////////////////////////// для деплоя на сервер:
+        self.api_key = os.getenv(f"{self.market_place.upper()}_API_PUBLIC_KEY", "")
+        self.api_secret = os.getenv(f"{self.market_place.upper()}_API_PRIVATE_KEY", "")
+        self.tg_api_token = os.getenv("TG_TOKEN", "")
+        # print(self.tg_api_token)
+        self.coinMarketCup_api_token = os.getenv("COIN_MARKET_CUP_TOKEN", "")
+        self.seq_control_token = os.getenv("ACESS_TOKEN", "")
+        self.proxy_host = os.getenv("proxy_host", "")
+        self.proxy_port = os.getenv("proxy_port", "")
+        self.proxy_username = os.getenv("proxy_username", "")
+        self.proxy_password = os.getenv("proxy_password", "")
         # ////////////////////// инициализация ключей: ///////////////////////////////
-        self.api_key = BINANCE_API_PUBLIC_KEY
-        self.api_secret = BINANCE_API_PRIVATE_KEY 
-        # print(self.api_key)
-        self.tg_api_token = TG_TOKEN
-        self.seq_control_token = ACESS_TOKEN
-        self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
-        self.proxy_host = proxy_host
-        self.proxy_port = proxy_port
-        self.proxy_username = proxy_username
-        self.proxy_password = proxy_password
+        # self.api_key = BINANCE_API_PUBLIC_KEY
+        # self.api_secret = BINANCE_API_PRIVATE_KEY 
+        # # print(self.api_key)
+        # self.tg_api_token = TG_TOKEN
+        # self.seq_control_token = ACESS_TOKEN
+        # self.coinMarketCup_api_token = COIN_MARKET_CUP_TOKEN
+        # self.proxy_host = proxy_host
+        # self.proxy_port = proxy_port
+        # self.proxy_username = proxy_username
+        # self.proxy_password = proxy_password
